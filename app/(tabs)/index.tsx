@@ -1,74 +1,192 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function Calculator() {
+  const [currentValue, setCurrentValue] = useState('0');
+  const [previousValue, setPreviousValue] = useState<string | null>(null);
+  const [operator, setOperator] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-export default function HomeScreen() {
+  const handleNumber = (num: string) => {
+    if (error) setError(null);
+    setCurrentValue(prev => 
+      prev === '0' || (operator && previousValue === null) ? num : prev + num
+    );
+    if (operator && previousValue === null) {
+      setPreviousValue(currentValue);
+    }
+  };
+
+  const handleOperator = (op: string) => {
+    if (currentValue === '') return;
+    if (operator !== null && previousValue !== null) {
+      const result = calculate();
+      if (result === null) return;
+      setPreviousValue(result);
+    } else {
+      setPreviousValue(currentValue);
+    }
+    setOperator(op);
+    setCurrentValue('');
+  };
+
+  const calculate = () => {
+    if (previousValue === null || operator === null) return null;
+    
+    const prev = parseFloat(previousValue);
+    const current = parseFloat(currentValue);
+    
+    if (isNaN(prev)) return null;
+    if (isNaN(current)) return null;
+
+    let result: number;
+    switch (operator) {
+      case '+': result = prev + current; break;
+      case '-': result = prev - current; break;
+      case '*': result = prev * current; break;
+      case '/':
+        if (current === 0) {
+          setError('Cannot divide by zero');
+          return null;
+        }
+        result = prev / current;
+        break;
+      default: return null;
+    }
+    return result.toString();
+  };
+
+  const handleEquals = () => {
+    if (operator === null || previousValue === null) return;
+    
+    const result = calculate();
+    if (result === null) return;
+
+    setCurrentValue(result);
+    setPreviousValue(null);
+    setOperator(null);
+  };
+
+  const handleClear = () => {
+    setCurrentValue('0');
+    setPreviousValue(null);
+    setOperator(null);
+    setError(null);
+  };
+
+  const handleBackspace = () => {
+    setCurrentValue(prev => {
+      if (error) return '0';
+      return prev.length > 1 ? prev.slice(0, -1) : '0';
+    });
+  };
+
+  const handleDecimal = () => {
+    if (error) return;
+    if (!currentValue.includes('.')) {
+      setCurrentValue(prev => prev + '.');
+    }
+  };
+
+  const displayValue = error || currentValue;
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <View style={styles.display}>
+        <Text style={styles.displayText}>{displayValue}</Text>
+      </View>
+
+      <View style={styles.buttonsContainer}>
+        <View style={styles.row}>
+          <Button label="C" isOperator onPress={handleClear} />
+          <Button label="←" isOperator onPress={handleBackspace} />
+          <Button label="/" isOperator onPress={() => handleOperator('/')} />
+          <Button label="*" isOperator onPress={() => handleOperator('*')} />
+        </View>
+        <View style={styles.row}>
+          <Button label="7" onPress={() => handleNumber('7')} />
+          <Button label="8" onPress={() => handleNumber('8')} />
+          <Button label="9" onPress={() => handleNumber('9')} />
+          <Button label="-" isOperator onPress={() => handleOperator('-')} />
+        </View>
+        <View style={styles.row}>
+          <Button label="4" onPress={() => handleNumber('4')} />
+          <Button label="5" onPress={() => handleNumber('5')} />
+          <Button label="6" onPress={() => handleNumber('6')} />
+          <Button label="+" isOperator onPress={() => handleOperator('+')} />
+        </View>
+        <View style={styles.row}>
+          <Button label="1" onPress={() => handleNumber('1')} />
+          <Button label="2" onPress={() => handleNumber('2')} />
+          <Button label="3" onPress={() => handleNumber('3')} />
+          <Button label="=" isOperator onPress={handleEquals} />
+        </View>
+        <View style={styles.row}>
+          <Button label="0" wide onPress={() => handleNumber('0')} />
+          <Button label="." onPress={handleDecimal} />
+        </View>
+      </View>
+    </View>
   );
 }
 
+const Button = ({ label, wide, isOperator, onPress }: any) => (
+  <TouchableOpacity
+    style={[
+      styles.button,
+      wide && styles.wideButton,
+      isOperator ? styles.operatorButton : styles.numberButton,
+    ]}
+    onPress={onPress}
+  >
+    <Text style={styles.buttonText}>{label}</Text>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: 'black',
+    padding: 10,
+    justifyContent: 'flex-end',
+  },
+  display: {
+    padding: 20,
+    marginBottom: 20,
+    alignItems: 'flex-end',
+  },
+  displayText: {
+    color: 'white',
+    fontSize: 60,
+    minHeight: 80,
+  },
+  buttonsContainer: {
+    gap: 10,
+  },
+  row: {
     flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  button: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: 50,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  wideButton: {
+    flex: 2,
+    aspectRatio: undefined,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  numberButton: {
+    backgroundColor: '#333',
+  },
+  operatorButton: {
+    backgroundColor: '#ff9500',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 32,
   },
 });
