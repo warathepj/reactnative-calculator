@@ -74,4 +74,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Uses [expo-router](https://docs.expo.dev/router/introduction/) for navigation
 - Implements [expo-symbols](https://docs.expo.dev/versions/latest/sdk/symbols/) for icons
 
-TODO:
